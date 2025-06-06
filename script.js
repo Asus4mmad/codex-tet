@@ -1,5 +1,8 @@
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
+const scoreElem = document.getElementById('score');
+const overlay = document.getElementById('overlay');
+let gameOver = false;
 context.scale(20, 20);
 
 function arenaSweep() {
@@ -13,6 +16,7 @@ function arenaSweep() {
     arena.unshift(row);
     ++y;
     player.score += 10;
+    updateScore();
   }
 }
 
@@ -36,6 +40,10 @@ function createMatrix(w, h) {
     matrix.push(new Array(w).fill(0));
   }
   return matrix;
+}
+
+function updateScore() {
+  scoreElem.textContent = player.score;
 }
 
 function createPiece(type) {
@@ -140,9 +148,11 @@ function playerReset() {
   player.pos.x = (arena[0].length / 2 | 0) -
                  (player.matrix[0].length / 2 | 0);
   if (collide(arena, player)) {
-    arena.forEach(row => row.fill(0));
-    player.score = 0;
+    gameOver = true;
+    overlay.style.display = 'block';
+    return;
   }
+  updateScore();
 }
 
 function rotate(matrix, dir) {
@@ -179,6 +189,7 @@ let dropInterval = 1000;
 
 let lastTime = 0;
 function update(time = 0) {
+  if (gameOver) return;
   const deltaTime = time - lastTime;
   lastTime = time;
 
@@ -209,7 +220,26 @@ const player = {
   score: 0,
 };
 
+function startGame() {
+  arena.forEach(row => row.fill(0));
+  player.score = 0;
+  dropCounter = 0;
+  lastTime = 0;
+  gameOver = false;
+  overlay.style.display = 'none';
+  playerReset();
+  updateScore();
+  update();
+}
+
 document.addEventListener('keydown', event => {
+  if (gameOver) {
+    if (event.keyCode === 82) { // R key
+      startGame();
+    }
+    return;
+  }
+
   if (event.keyCode === 37) {
     playerMove(-1);
   } else if (event.keyCode === 39) {
@@ -223,5 +253,4 @@ document.addEventListener('keydown', event => {
   }
 });
 
-playerReset();
-update();
+startGame();
